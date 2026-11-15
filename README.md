@@ -30,12 +30,15 @@ the other. Runs on your machine with your subscription login. MIT.
 
 One for each stage of the lifecycle. Two live in this repo, two have their own.
 
-| Stage | Tool | In one line | Where |
-|---|---|---|---|
-| **Plan** | plan-html | Settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
-| **Build** | delegate | A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) |
-| **Check** | browser worker | A cheap model drives the browser and returns a short answer | [`browser/`](browser/) |
-| **Fix** | bubble-fix | Report issues inside your app, catch errors, fix them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
+| Stage | Tool | Skill | In one line | Where |
+|---|---|---|---|---|
+| **Plan** | plan-html | `/plan-html` | Settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
+| **Build** | delegate | `/delegate` | A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) |
+| **Check** | browser worker | `/browse` | A cheap model drives the browser and returns a short answer | [`browser/`](browser/) |
+| **Fix** | bubble-fix | `/bubble-fix` | Report issues inside your app, catch errors, fix them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
+
+**Every tool comes with a skill.** You do not have to learn the commands: your agent reads the
+skill and runs the tool for you. In Codex the same skills start with `$`, for example `$delegate`.
 
 ## Start here
 
