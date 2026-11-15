@@ -152,6 +152,8 @@ Numbers from the two-day build these tools came out of:
 - **One browser session made 397 model requests,** with a median of 581K input tokens each.
   About 99% of that input was the same conversation history, read again on every step.
 
+Time and cost for each harness on that build: [Claude Code vs Codex vs Pi: Two Days Building One CRM](https://experiments.doryzidon.com/three-harnesses-one-crm/)
+
 ## Change the models
 
 | Tool | Claude Code default | Codex default | How to change |
