@@ -1,0 +1,16 @@
+<!doctype html><html><head><title>Browser worker test workspace</title><style>body{font:18px sans-serif;padding:24px;max-width:800px}label{display:block;margin:12px}#hero{padding:20px;background:#eee}input,select,button{font:inherit;margin:6px}</style></head><body>
+<h1>Application and design sandbox</h1><p id="catalog">Plan Basic: $10. Plan Pro: $20.</p>
+<form onsubmit="event.preventDefault();document.querySelector('#receipt').textContent='Application submitted';window.submissions=(window.submissions||0)+1">
+<label>Name <input id="name" aria-label="Name"></label><label>Email <input id="email" aria-label="Email"></label>
+<label>Experience <textarea id="experience" aria-label="Experience"></textarea></label>
+<label>Role <select id="role" aria-label="Role"><option>Engineer</option><option>Designer</option></select></label>
+<label><input type="checkbox" id="remote"> Remote work</label>
+<button type="button" onclick="document.querySelector('#draft').textContent='Draft saved';localStorage.setItem('draft',document.querySelector('#name').value)">Save draft</button>
+<button type="submit">Submit application</button></form><p id="draft"></p><p id="receipt"></p>
+<button onclick="setTimeout(()=>{document.querySelector('#details').hidden=false},300)">Show details</button><p id="details" hidden>Project detail: accessible design</p>
+<h2>Design controls</h2><p>Changes affect this sandbox element only.</p><section id="hero"><h2 id="headline">Original headline</h2><button>Learn more</button></section>
+<label>Headline <input id="headline-edit" aria-label="Headline" oninput="document.querySelector('#headline').textContent=this.value"></label>
+<label>Background <select id="color" aria-label="Background" onchange="document.querySelector('#hero').style.background=this.value"><option value="#eee">Gray</option><option value="lightblue">Blue</option></select></label>
+<button onclick="document.querySelector('#design-status').textContent='Design saved'">Save design</button><p id="design-status"></p>
+<a href="/second">Second page</a><p id="second"></p><script>if(location.pathname==='/second')document.querySelector('#second').textContent='Second page loaded';</script>
+</body></html>

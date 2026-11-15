@@ -1,0 +1,9 @@
+{
+  "objective": "Open the page and confirm the heading text is visible. Read only.",
+  "url": "https://example.com",
+  "permissions": ["read"],
+  "max_actions": 10,
+  "checks": [
+    {"name": "Heading visible", "kind": "text", "selector": "h1", "expected": "Example Domain"}
+  ]
+}

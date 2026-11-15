@@ -1,0 +1,7 @@
+[project]
+name = "agent-orchestrate"
+version = "0.1.0"
+description = "Small CLI task runner for subscription Claude Code and Codex"
+requires-python = ">=3.12"
+dependencies = []
+
