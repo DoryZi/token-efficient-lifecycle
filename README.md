@@ -2,26 +2,142 @@
 
 **Run an AI development lifecycle without burning through your tokens.**
 
-**[The four stages](#the-four-stages)** · [Install](#install) · [Delegate to a cheaper model](#delegate-to-a-cheaper-model) · [Drive the browser cheaply](#drive-the-browser-cheaply) · [Who decides, who drives](#who-decides-who-drives) · [Build your own](#build-your-own)
+**[The idea](#the-idea)** · [The four tools](#the-four-tools) · [Start here](#start-here) · [Who decides, who drives](#who-decides-who-drives) · [Build your own](#build-your-own)
 
-An agent build spends most of its tokens in places you do not see: re-reading the plan,
-checking, fixing what the checks found, and clicking through a browser one screenshot at a
-time. This repo is the map of four small tools, one for each stage, that cut that cost. Two of
-them live here. Two have their own repos.
+## The idea
 
-**Cross-harness:** the skills work in **Claude Code** and **Codex**, and either one can hand
-work to the other. Everything runs on your machine with your subscription login. MIT.
+Your strongest model is expensive, and most of what an agent build does is not thinking. It
+is reading files, re-reading the plan, running checks and clicking through a browser. So:
+
+```text
+STRONG MODEL (your main agent)            CHEAP MODEL (a worker, fresh context)
+  decides what to do
+  writes a short brief          --->        reads, clicks, writes, runs tests
+                                            carries all the heavy context
+  reads a short result          <---        returns: status, what changed, evidence
+  checks it, decides the next step
+```
+
+**The strong model decides. The cheap model drives.** Only short briefs go down and only
+short results come back up.
+
+**Cross-harness:** works in **Claude Code** and **Codex**, and either one can hand work to
+the other. Runs on your machine with your subscription login. MIT.
 
 ⭐ **If this is useful to you, please star the repo.** It is how other people find it.
 
-## The four stages
+## The four tools
 
-| Stage | Tool | What it does | Where |
+One for each stage of the lifecycle. Two live in this repo, two have their own.
+
+| Stage | Tool | In one line | Where |
 |---|---|---|---|
-| **Plan** | plan-html | You settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
-| **Build** | delegate | The strong model plans and reviews. A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) in this repo |
-| **Check** | browser worker | A cheap model drives the browser through Playwright CLI in small steps and returns a short result | [`browser/`](browser/) in this repo |
-| **Fix** | bubble-fix | You report issues inside your app, errors are caught for you, and the agent fixes them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
+| **Plan** | plan-html | Settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
+| **Build** | delegate | A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) |
+| **Check** | browser worker | A cheap model drives the browser and returns a short answer | [`browser/`](browser/) |
+| **Fix** | bubble-fix | Report issues inside your app, catch errors, fix them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
+
+## Start here
+
+**1. Install** (Claude Code):
+
+```text
+/plugin marketplace add DoryZi/token-efficient-lifecycle
+/plugin install token-efficient-lifecycle@token-efficient-lifecycle
+```
+
+<details>
+<summary><b>Codex, or a plain clone</b></summary>
+
+```bash
+git clone https://github.com/DoryZi/token-efficient-lifecycle ~/token-efficient-lifecycle
+mkdir -p ~/.claude/skills ~/.agents/skills
+ln -s ~/token-efficient-lifecycle/skills/delegate ~/.claude/skills/delegate   # Claude Code
+ln -s ~/token-efficient-lifecycle/skills/browse ~/.claude/skills/browse
+ln -s ~/token-efficient-lifecycle/skills/delegate ~/.agents/skills/delegate   # Codex
+ln -s ~/token-efficient-lifecycle/skills/browse ~/.agents/skills/browse
+```
+
+The skills find the tools through `TOKEN_EFFICIENT_HOME` (default `~/token-efficient-lifecycle`).
+If you cloned somewhere else, add `export TOKEN_EFFICIENT_HOME=/your/path` to your shell profile.
+
+</details>
+
+You need Python 3.12 or later, [uv](https://docs.astral.sh/uv/), and Claude Code and/or Codex
+logged in. The browser worker also needs [Playwright CLI](https://playwright.dev/docs/getting-started-cli)
+with Chromium: `playwright-cli install-browser chromium`.
+
+**2. Tell your agent the rules.** Paste the block from
+[prompts/supervision-rules.md](prompts/supervision-rules.md) into your `CLAUDE.md` or
+`AGENTS.md`. It tells your agent when to hand work down and when to keep it.
+
+**3. Set up the browser worker once.** It checks your login and probes the two models. Ask
+your agent to "set up the browser worker", or run it from the `browser/` folder:
+
+```bash
+uv run python browser_worker.py setup --backend claude --config ~/.browser-worker.json
+```
+
+**4. Use the two skills.**
+
+```text
+/delegate add input validation to the signup form and cover it with tests
+/browse http://localhost:3000/signup the form shows an error for a bad email
+```
+
+In Codex the same skills are `$delegate` and `$browse`.
+
+Your agent gets back a short result each time: for `/delegate` the worker's final answer and
+what it changed, for `/browse` a status with the checks that passed.
+
+## Delegate
+
+Your agent writes a brief, a cheaper model does the work in a fresh context, your agent
+checks the result. Nothing is committed, merged or deployed for you.
+
+```text
+BRIEF  ->  RUN (cheap model)  ->  READ the short answer  ->  CHECK  ->  retry if needed
+```
+
+Step by step, with every command: **[orchestrate/README.md](orchestrate/README.md)**
+
+## Browser worker
+
+A browser throws an enormous amount at your agent: page text, screenshots, a decision on
+every click. The browser worker puts the browser in a box. Your agent hands over a page and
+a goal and gets back a short answer. It does not analyze each step.
+
+```text
+page + goal  ->  THE BOX (cheap model + Playwright CLI)  ->  {status, checks passed, evidence}
+```
+
+It will not submit, buy, publish, send or delete unless a task file grants that permission.
+
+Step by step: **[browser/README.md](browser/README.md)**
+
+## Who decides, who drives
+
+| Level | Model | What it does |
+|---|---|---|
+| **Supervisor** | Your main agent, on the strongest model you have | Sets the goal, chooses what to hand down, makes product and design decisions, reviews the result |
+| **Decision** | A mid-priced model, only when asked | Unblocks a stuck worker, judges a screenshot |
+| **Worker** | The cheapest model that can do it | Drives the browser, reads pages and logs, takes screenshots, writes boilerplate, runs tests |
+
+- **Hand work down** when the steps are mechanical, a check can tell whether it worked, it
+  needs a lot of reading but returns a short answer, and a wrong step is cheap to undo.
+- **Keep it up top** when the choice changes what gets built, the requirements are unclear,
+  a mistake cannot be undone, or it is the final call on whether the result is good enough.
+- **What comes back up is short:** status, what changed, where the evidence is, open questions.
+
+The full rubric, ready to paste: [prompts/supervision-rules.md](prompts/supervision-rules.md)
+
+## Build your own
+
+You do not have to use these tools as they are. These prompts tell your own agent to build
+its version, in your stack:
+
+- [Build your own delegate tool](prompts/build-your-own-delegate.md)
+- [Build your own browser worker](prompts/build-your-own-browser-worker.md)
 
 ## Why it matters
 
@@ -32,99 +148,6 @@ Numbers from the two-day build these tools came out of:
 - **The plan was read 375 times** by 130 agents. Each read costs a model turn.
 - **One browser session made 397 model requests,** with a median of 581K input tokens each.
   About 99% of that input was the same conversation history, read again on every step.
-
-The fix is the same idea at each stage: keep the expensive model for the thinking, and give
-the mechanical work to a cheaper model with a small, fresh context.
-
-## Install
-
-In Claude Code:
-
-```text
-/plugin marketplace add DoryZi/token-efficient-lifecycle
-/plugin install token-efficient-lifecycle@token-efficient-lifecycle
-```
-
-Or clone it (the skills find the tools through `TOKEN_EFFICIENT_HOME`, default
-`~/token-efficient-lifecycle`):
-
-```bash
-git clone https://github.com/DoryZi/token-efficient-lifecycle ~/token-efficient-lifecycle
-ln -s ~/token-efficient-lifecycle/skills/delegate ~/.claude/skills/delegate   # Claude Code
-ln -s ~/token-efficient-lifecycle/skills/browse ~/.claude/skills/browse
-ln -s ~/token-efficient-lifecycle/skills/delegate ~/.agents/skills/delegate   # Codex
-ln -s ~/token-efficient-lifecycle/skills/browse ~/.agents/skills/browse
-```
-
-You need Python 3.12 or later, [uv](https://docs.astral.sh/uv/), and Claude Code and/or Codex
-logged in. The browser worker also needs [Playwright CLI](https://playwright.dev/docs/getting-started-cli).
-
-## Delegate to a cheaper model
-
-`/delegate <task>` in Claude Code, `$delegate <task>` in Codex. Your agent writes a short
-brief, a cheaper model does the work in a fresh context, and your agent reviews the result.
-
-```bash
-uv run --directory ~/token-efficient-lifecycle/orchestrate python orchestrate.py \
-  --project /path/to/project run fix-login --harness claude --prompt-file /tmp/fix-login.md
-```
-
-- **No MCP, no server, no SDK.** It calls the `claude` or `codex` command line you already have.
-- **State is saved.** Prompts, logs and the final answer stay in `.orchestrate/<task-id>/`, so
-  a failed task can be retried with the same id.
-- **Bounded.** A time limit per attempt, a total budget and a maximum number of attempts.
-- **Nothing is committed, merged or deployed for you.**
-
-Details: [orchestrate/README.md](orchestrate/README.md).
-
-## Drive the browser cheaply
-
-`/browse <url> <goal>` in Claude Code, `$browse <url> <goal>` in Codex. Use it for any browser
-work: checking a page after a change, a smoke test, reading something off a site.
-
-```bash
-uv run --directory ~/token-efficient-lifecycle/browser python browser_worker.py \
-  browse http://localhost:3000 --goal "Check the sign-up form shows an error for a bad email" --backend claude --read-only
-```
-
-- **A cheap model proposes one small step at a time.** It never runs tools itself.
-- **Only allowlisted Playwright CLI commands run,** with text results where text is enough.
-- **Final actions are refused.** `browse` will not submit, buy, publish, send or delete. A task
-  file has to grant that permission explicitly.
-- **Your agent gets a short result back,** not the whole browsing session.
-
-Details: [browser/README.md](browser/README.md).
-
-## Who decides, who drives
-
-The rule behind both tools: your strongest model supervises, and the cheapest model that can
-do the job drives.
-
-| Level | Model | What it does |
-|---|---|---|
-| **Supervisor** | Your main agent, on the strongest model you have | Sets the goal, chooses what to hand down, makes product and design decisions, reviews the result |
-| **Decision** | A mid-priced model, only when asked | Unblocks a stuck worker, judges a screenshot |
-| **Worker** | The cheapest model that can do it | Drives the browser, reads pages and logs, takes screenshots, writes boilerplate, runs tests |
-
-**Hand work down** when the steps are mechanical, a check can tell whether it worked, it
-needs a lot of reading but returns a short answer, and a wrong step is cheap to undo.
-
-**Keep it up top** when the choice changes what gets built, the requirements are unclear, a
-mistake cannot be undone, or it is the final call on whether the result is good enough.
-
-**What comes back up is short:** status, what changed, where the evidence is, open questions.
-Never the whole transcript.
-
-The full rubric is a block you can paste into your `CLAUDE.md` or `AGENTS.md`:
-[prompts/supervision-rules.md](prompts/supervision-rules.md).
-
-## Build your own
-
-You do not have to use these tools as they are. Two prompts in [`prompts/`](prompts/) tell
-your own agent to build its version, in your stack:
-
-- [Build your own delegate tool](prompts/build-your-own-delegate.md)
-- [Build your own browser worker](prompts/build-your-own-browser-worker.md)
 
 ## Change the models
 

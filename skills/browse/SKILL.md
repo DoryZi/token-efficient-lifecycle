@@ -22,17 +22,25 @@ ${CLAUDE_PLUGIN_ROOT:-${TOKEN_EFFICIENT_HOME:-$HOME/token-efficient-lifecycle}}/
 1. Once per machine and backend:
 
    ```bash
-   uv run --directory <tool> python browser_worker.py setup --backend claude
+   uv run --directory <tool> python browser_worker.py setup --backend claude --config "$HOME/.browser-worker.json"
    ```
+
+   It makes a few small subscription calls to probe the models. Skip it when
+   `~/.browser-worker.json` already has this backend.
 
 2. State the goal as something that can be seen on the page when it is reached, then run:
 
    ```bash
-   uv run --directory <tool> python browser_worker.py browse <url> --goal "<goal>" --backend claude --read-only
+   uv run --directory <tool> python browser_worker.py browse <url> --goal "<goal>" --backend claude --read-only --config "$HOME/.browser-worker.json"
    ```
 
+   Always pass `--config` as above. Paths are read from the tool folder, so give `--out` and
+   `--task-file` as absolute paths.
+
    - `--read-only` for checks. Leave it out when the task has to type or click to change something.
-   - `--max-steps N` caps browser actions (default 60). Reading the page counts as an action.
+   - `--max-steps N` caps browser actions (default 60). Every Playwright CLI call counts, and
+     one click costs about 4 to 5, so 60 is roughly 12 to 15 clicks. Use 100 or more for long goals.
+   - Do not use `--mode cheap` with `browse`: its final check needs the decision model.
    - `--backend codex` uses the Codex models.
 
 3. Read the JSON result: `status` is `completed` or `blocked`, with the reason and the checks.

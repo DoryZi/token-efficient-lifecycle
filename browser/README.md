@@ -1,22 +1,74 @@
 # Browser worker
 
-A small, bounded browser task runner for agents.
+**A browser throws an enormous amount at your agent: page text, screenshots, a new decision on every click. This puts the browser in a box.**
 
-The calling agent gives it a page and a goal. A cheap model looks at the page and
-proposes one small JSON action at a time. Only allowlisted `playwright-cli` commands
-run. Final actions (submit, buy, delete, publish, send) are refused unless the task
-explicitly allows them. A short result comes back.
+Your strong model does not watch the browser. It hands over a page and a goal, and gets back
+a short answer: did it work, which checks passed, where the evidence is. All the reading,
+clicking and screenshots happen inside the box, on a cheap model.
 
-It uses your Claude Code or Codex subscription login. It never uses an API key and
-never falls back to paid API billing.
+## The idea
 
-## Why it saves tokens
+```text
+YOUR AGENT (strong model)          THE BOX (cheap model + Playwright CLI)
+  "open this page,          --->     read page as text
+   check the sign-up                 propose one small step
+   form rejects a bad                run it (only allowed commands)
+   email"                            repeat, up to a step limit
+                                     check the goal itself
+  short result              <---   {status, checks passed, evidence path}
+  decide what to do next
+```
 
-- Each step uses a small, fresh context: the task, the current page text, a short memory and the last few actions. There is no long chat history to re-read.
-- A cheap worker model does most steps. A stronger decision model is used only when the worker is stuck or a visual check needs a screenshot.
-- Pages are read as text snapshots. Screenshots are used only when needed.
-- Steps, time and decision-model consultations are all capped.
-- The calling agent gets a compact result, not the whole browsing session. Full evidence stays on disk.
+- **Your agent decides. The box drives.** The strong model never analyzes each step.
+- **Each step is small.** The cheap model sees the goal, the current page text and its last
+  few actions. No long conversation is read again on every click.
+- **Text first.** Pages are read as text. A screenshot is taken only when a check needs one.
+- **Two models.** A cheap *worker* model does the steps. A stronger *decision* model is asked
+  only when the worker is stuck or a check needs a screenshot judged. Each such ask is a
+  *consultation*, and they are capped.
+- **It checks its own work.** When the cheap model says "done", the tool runs the checks. A
+  claim of success is never taken on trust.
+- **It hands back when stuck.** A blocked run returns the reason, so your agent can decide.
+
+## Use it
+
+Let your agent run it with the skill: `/browse <url> <goal>` in Claude Code, `$browse <url> <goal>`
+in Codex. Or by hand, from this folder:
+
+**1. Set it up once.** It checks your login and sends one tiny probe to each of the two models,
+so it uses a few subscription calls:
+
+```
+uv run python browser_worker.py setup --backend claude
+```
+
+The choice is saved in `.browser-worker.json` in this folder. If you installed this as a
+plugin, the folder can be replaced on update, so keep the file somewhere stable: add
+`--config ~/.browser-worker.json` to `setup` and to every `browse` and `run`.
+
+**2. Give it a page and a goal:**
+
+```
+uv run python browser_worker.py browse https://example.com \
+  --goal "Confirm the page shows the heading Example Domain" \
+  --backend claude --read-only
+```
+
+**3. Read the short result.** It is one small JSON object:
+
+| Field | Meaning |
+|---|---|
+| `status` | `completed` or `blocked` |
+| `reason` | Why it stopped |
+| `checks` | Each check with `passed` true or false |
+| `actions`, `consultations`, `seconds` | How much work it took |
+| `models` | Calls and tokens per model |
+| `evidence`, `details` | Where the full record and screenshots are on disk |
+
+State the goal as something that can be **seen on the page** when it is reached. "Check the
+form" is vague. "The form shows an error under the email field" can be checked.
+
+It uses your Claude Code or Codex subscription login. It never uses an API key.
 
 ## Install
 
@@ -24,25 +76,14 @@ You need:
 
 - Python 3.12 or newer
 - [uv](https://docs.astral.sh/uv/)
-- `playwright-cli` on your PATH, with a Chromium browser installed
+- `playwright-cli` on your PATH, with Chromium installed: `playwright-cli install-browser chromium`
 - Claude Code or Codex, logged in with your subscription
 
 Run commands from this folder with `uv run`.
 
-## Setup
+## Browse options
 
-Run once per backend. It checks your login and sends one tiny probe to each model.
-
-```
-uv run python browser_worker.py setup --backend claude
-uv run python browser_worker.py setup --backend codex
-```
-
-The choice is saved in `.browser-worker.json` (ignored by git).
-
-## Browse
-
-Open a page and work toward a goal:
+The full command:
 
 ```
 uv run python browser_worker.py browse https://example.com \
@@ -55,9 +96,16 @@ Options:
 - `--goal` what to do. Required.
 - `--backend claude|codex`. Required.
 - `--read-only` allow reading only. No typing or clicking that edits.
-- `--max-steps N` cap on browser actions (1 to 300, default 60).
-- `--mode mixed|cheap|strong` model use. `mixed` is the default.
-- `--out DIR` where to keep evidence. The folder must not exist yet.
+- `--max-steps N` cap on browser actions (1 to 300, default 60). Every `playwright-cli` call
+  counts, including reading the page. One click costs about 4 to 5 calls, so 60 is roughly
+  12 to 15 clicks. Use 100 or more for goals with many steps.
+- `--mode mixed|cheap|strong` which models do the steps. `mixed` (default): the cheap worker
+  model does the steps and the stronger decision model is consulted when the worker is stuck.
+  `strong`: the decision model does every step. `cheap`: never consult the decision model.
+  `browse` needs the decision model to judge its final screenshot, so do not use `cheap` with it.
+- `--out DIR` where to keep evidence. The folder must not exist yet. Use an absolute path:
+  with `uv run --directory`, relative paths are read from the tool folder, not your project.
+- `--config FILE` where the saved setup is. Default `.browser-worker.json` in this folder.
 
 `browse` builds a task in code. Its only check is a visual one: the decision model
 looks at a final screenshot and confirms the goal. For exact checks, use a task file.
@@ -66,6 +114,12 @@ looks at a final screenshot and confirms the goal. For exact checks, use a task 
 
 ```
 uv run python browser_worker.py run --task-file examples/check-page.json --backend claude
+```
+
+From another folder, give the task file as an absolute path:
+
+```
+uv run --directory /path/to/browser python browser_worker.py run --task-file /abs/path/task.json --backend claude
 ```
 
 ### Task fields
@@ -89,10 +143,11 @@ The whole task must stay under 10,000 characters.
 
 ## Result
 
-The command prints a compact JSON result: status, reason, checks, counts and token use
-per model. Status is `completed` or `blocked`. Exit code is 0 for completed and 2
-otherwise. Full details are in `result.json` inside the evidence folder. Default
-evidence goes to `runs/<id>/`.
+The command prints a compact JSON result: `status`, `reason`, `backend`, `seconds`, `actions`,
+`consultations`, `cleanup_error`, `checks`, `models`, `evidence` and `details`. Status is
+`completed` or `blocked`. Each check has only `name` and `passed`; the actual values are in
+`result.json` in the evidence folder. Exit code is 0 for completed and 2 for anything else,
+including a missing setup. Without `--out`, evidence goes to `runs/<id>/` in this folder.
 
 ## Safety boundaries
 
