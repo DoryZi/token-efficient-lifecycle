@@ -31,5 +31,5 @@ Boundaries:
 
 Also write:
 - Tests with a fake model and a fake browser: no network and no model calls.
-- A short rules block for my CLAUDE.md or AGENTS.md that tells the agent to use this tool in place of driving the browser itself.
+- A short skill file that tells an agent when to use this tool in place of driving the browser itself.
 ```

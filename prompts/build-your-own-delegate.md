@@ -29,7 +29,7 @@ Boundaries:
 
 Also write:
 - Tests that use a fake `claude` and `codex` executable, so they need no network and no model.
-- A short rules block for my CLAUDE.md or AGENTS.md that tells the agent when and how to use the tool.
+- A short skill file that explains to an agent when and how to use the tool.
 
 Ask me before choosing the language if this folder does not make it obvious.
 ```

@@ -32,8 +32,8 @@ YOUR AGENT (strong model)          THE BOX (cheap model + Playwright CLI)
 
 ## Use it
 
-Your agent runs this for you once the [rules block](../prompts/supervision-rules.md) is in
-your `CLAUDE.md` or `AGENTS.md`. To run it by hand, from this folder:
+Let your agent run it with the skill: `/browse <url> <goal>` in Claude Code, `$browse <url> <goal>`
+in Codex. Or by hand, from this folder:
 
 **1. Set it up once.** It checks your login and sends one tiny probe to each of the two models,
 so it uses a few subscription calls:
@@ -42,9 +42,9 @@ so it uses a few subscription calls:
 uv run python browser_worker.py setup --backend claude
 ```
 
-The choice is saved in `.browser-worker.json` in this folder. To keep it in your home folder,
-add `--config ~/.browser-worker.json` to `setup` and to every `browse` and `run`. The rules
-block uses that location.
+The choice is saved in `.browser-worker.json` in this folder. If you installed this as a
+plugin, the folder can be replaced on update, so keep the file somewhere stable: add
+`--config ~/.browser-worker.json` to `setup` and to every `browse` and `run`.
 
 **2. Give it a page and a goal:**
 

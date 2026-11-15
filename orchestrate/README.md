@@ -20,8 +20,8 @@ the `claude` or `codex` command line you already have, with your subscription lo
 
 ## Use it
 
-Your agent runs this for you once the [rules block](../prompts/supervision-rules.md) is in
-your `CLAUDE.md` or `AGENTS.md`. To run it by hand:
+You can let your agent drive this with the skill: `/delegate <task>` in Claude Code,
+`$delegate <task>` in Codex. Or run it by hand:
 
 **1. Write a brief.** Save it as a file, for example `/tmp/fix-login.md`:
 

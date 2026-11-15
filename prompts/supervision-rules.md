@@ -1,9 +1,7 @@
 # Who decides, who drives
 
 Paste this block into your `CLAUDE.md` or `AGENTS.md`. It tells your main agent how to split
-work between itself and cheaper models, and makes the two tools the required way to do browser
-work and mechanical build work. Rules in these files are read on every task, so the agent
-uses the tools every time, not only when it remembers to.
+work between itself and cheaper models.
 
 ```markdown
 ## Model use: who decides, who drives
@@ -40,29 +38,4 @@ Never the whole transcript, never raw page dumps, never screenshots unless you a
 
 Before handing down, write a brief: the goal, the files or pages that matter, what is out of
 scope, and the checks that say it is done. The worker starts with no memory of this conversation.
-
-### The tools for this (mandatory)
-
-The tools are in `~/token-efficient-lifecycle`. Read a tool's README once before first use.
-
-- **Browser work: never drive the browser yourself step by step.** Hand it to the browser worker:
-
-  `uv run --directory ~/token-efficient-lifecycle/browser python browser_worker.py browse <url> --goal "<what must be visible on the page when done>" --backend claude --read-only --config "$HOME/.browser-worker.json"`
-
-  Leave out `--read-only` when it has to type or click to change something. Read the short
-  JSON result. Open a screenshot from its evidence folder only when you need to see it yourself.
-  Exceptions: the user asks you to look yourself, or the page needs the user's own login
-  (the worker runs a private browser and cannot reach it).
-
-- **Mechanical build work (boilerplate, tests, small fixes): delegate it.** Write the brief to a
-  file, then:
-
-  `uv run --directory ~/token-efficient-lifecycle/orchestrate python orchestrate.py --project <dir> run <task-id> --harness claude --prompt-file <brief-file>`
-
-  Read the worker's answer (the `response` file of the last attempt), look at the diff and run
-  the tests yourself. `completed` means it finished, not that it is right.
-
-- Use `--backend codex` and `--harness codex` to have the Codex models do the work.
 ```
-
-If you cloned the repo somewhere else, change `~/token-efficient-lifecycle` in the block.
