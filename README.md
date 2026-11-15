@@ -30,68 +30,49 @@ the other. Runs on your machine with your subscription login. MIT.
 
 One for each stage of the lifecycle. Two live in this repo, two have their own.
 
-| Stage | Tool | Skill | In one line | Where |
+| Stage | Tool | How your agent uses it | In one line | Where |
 |---|---|---|---|---|
-| **Plan** | plan-html | `/plan-html` | Settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
-| **Build** | delegate | `/delegate` | A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) |
-| **Check** | browser worker | `/browse` | A cheap model drives the browser and returns a short answer | [`browser/`](browser/) |
-| **Fix** | bubble-fix | `/bubble-fix` | Report issues inside your app, catch errors, fix them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
+| **Plan** | plan-html | its skill, `/plan-html` | Settle the plan on a page you click through, before any build cost starts | [DoryZi/plan-html](https://github.com/DoryZi/plan-html) |
+| **Build** | delegate | the rules block | A cheaper model writes the code in its own context | [`orchestrate/`](orchestrate/) |
+| **Check** | browser worker | the rules block | A cheap model drives the browser and returns a short answer | [`browser/`](browser/) |
+| **Fix** | bubble-fix | its skill, `/bubble-fix` | Report issues inside your app, catch errors, fix them in a checked cycle | [DoryZi/bubble-fix](https://github.com/DoryZi/bubble-fix) |
 
-**Every tool comes with a skill.** You do not have to learn the commands: your agent reads the
-skill and runs the tool for you. In Codex the same skills start with `$`, for example `$delegate`.
+**The two tools here have no skill, on purpose.** They are wired in through a rules block in
+your `CLAUDE.md` or `AGENTS.md`. Those files are read on every task, so handing work down
+becomes the way your agent works, not something it has to remember to do.
 
 ## Start here
 
-**1. Install** (Claude Code):
-
-```text
-/plugin marketplace add DoryZi/token-efficient-lifecycle
-/plugin install token-efficient-lifecycle@token-efficient-lifecycle
-```
-
-<details>
-<summary><b>Codex, or a plain clone</b></summary>
+**1. Clone it.**
 
 ```bash
 git clone https://github.com/DoryZi/token-efficient-lifecycle ~/token-efficient-lifecycle
-mkdir -p ~/.claude/skills ~/.agents/skills
-ln -s ~/token-efficient-lifecycle/skills/delegate ~/.claude/skills/delegate   # Claude Code
-ln -s ~/token-efficient-lifecycle/skills/browse ~/.claude/skills/browse
-ln -s ~/token-efficient-lifecycle/skills/delegate ~/.agents/skills/delegate   # Codex
-ln -s ~/token-efficient-lifecycle/skills/browse ~/.agents/skills/browse
 ```
-
-The skills find the tools through `TOKEN_EFFICIENT_HOME` (default `~/token-efficient-lifecycle`).
-If you cloned somewhere else, add `export TOKEN_EFFICIENT_HOME=/your/path` to your shell profile.
-
-</details>
 
 You need Python 3.12 or later, [uv](https://docs.astral.sh/uv/), and Claude Code and/or Codex
 logged in. The browser worker also needs [Playwright CLI](https://playwright.dev/docs/getting-started-cli)
 with Chromium: `playwright-cli install-browser chromium`.
 
-**2. Tell your agent the rules.** Paste the block from
-[prompts/supervision-rules.md](prompts/supervision-rules.md) into your `CLAUDE.md` or
-`AGENTS.md`. It tells your agent when to hand work down and when to keep it.
+**2. Paste the rules block.** Copy the block from
+[prompts/supervision-rules.md](prompts/supervision-rules.md) into your `CLAUDE.md` (Claude
+Code) or `AGENTS.md` (Codex). It tells your agent when to hand work down, when to keep it,
+and the exact commands to use.
 
-**3. Set up the browser worker once.** It checks your login and probes the two models. Ask
-your agent to "set up the browser worker", or run it from the `browser/` folder:
+**3. Set up the browser worker once.** It checks your login and probes the two models:
 
 ```bash
-uv run python browser_worker.py setup --backend claude --config ~/.browser-worker.json
+uv run --directory ~/token-efficient-lifecycle/browser python browser_worker.py setup --backend claude --config ~/.browser-worker.json
 ```
 
-**4. Use the two skills.**
+**4. Work as usual.** Nothing new to type. Ask for what you want:
 
 ```text
-/delegate add input validation to the signup form and cover it with tests
-/browse http://localhost:3000/signup the form shows an error for a bad email
+add input validation to the signup form and cover it with tests
+check that the signup page shows an error for a bad email
 ```
 
-In Codex the same skills are `$delegate` and `$browse`.
-
-Your agent gets back a short result each time: for `/delegate` the worker's final answer and
-what it changed, for `/browse` a status with the checks that passed.
+Your agent now hands the test writing to a cheaper model and the page check to the browser
+worker, and gets a short result back each time.
 
 ## Delegate
 
